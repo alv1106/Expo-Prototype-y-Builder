@@ -4,9 +4,21 @@
 
 Separa la **construcción** de un objeto complejo de su **representación final**, permitiendo construir el objeto paso a paso y producir distintas configuraciones del mismo proceso de construcción.
 
-### Estructura general
+### El problema
 
-![Estructura general de Builder]![Estructura general de Builder](imgs/builder.jpeg)
+Por ejemplo en un sistema para una hamburguesería. Una `Hamburguesa` tiene múltiples componentes: tipo de pan, cantidad de carne, presencia de queso, tipo de salsa, etc.":
+
+```avaj
+// Esto es lo que queremos EVITAR:
+new Hamburguesa("Brioche", 2, true, "BBQ");
+new Hamburguesa("Tradicional", 1, false, "Mostaza");
+// Resulta difícil recordar el orden de los parámetros (¿cuál booleano era el queso?).
+```
+### La solución
+
+Se desacopla la creación del objeto complejo introduciendo una interfaz `Builder` con pasos específicos y una clase `Director` que se encarga del orden las recetas (como "doble" o "sencilla"). De esta forma, el cliente le pide al director que construya un tipo de hamburguesa utilizando el constructor concreto, evitando constructores gigantes confusos y permitiendo ensamblar objetos complejos de forma clara, paso a paso y totalmente reutilizable.
+
+### Estructura general
 
 ![Estructura general de Builder](imgs/builder.jpeg)
 
@@ -20,20 +32,9 @@ Separa la **construcción** de un objeto complejo de su **representación final*
 
 ---
 
-### El problema
-
-Imagina que estás modelando un sistema para una hamburguesería. Una `Hamburguesa` tiene múltiples componentes: tipo de pan, cantidad de carne, presencia de queso, tipo de salsa, etc. Intentar manejar todas las variantes posibles con constructores sobrecargados lleva al antipatrón de "constructor telescópico":
-
-```avaj
-// Esto es lo que queremos EVITAR:
-new Hamburguesa("Brioche", 2, true, "BBQ");
-new Hamburguesa("Tradicional", 1, false, "Mostaza");
-// Resulta difícil recordar el orden de los parámetros (¿cuál booleano era el queso?).
-```
 
 ### Código para probar
 ```avaj
-// Builder.java
 public interface Builder {
     void reset();
     void buildPan(String pan);
@@ -65,18 +66,15 @@ public class Director {
         } else if (type.equalsIgnoreCase("sencilla")) {
             this.builder.buildPan("Tradicional");
             this.builder.buildCarne(1);
-            this.builder.buildQueso(false);
-            this.builder.buildSalsa("Mostaza");
         }
     }
 }
 
 public class Hamburguesa {
-    private String pan;
-    private int carne;
-    private boolean queso;
-    private String salsa;
-
+    private String pan = "Sin pan";
+    private int carne = 0;
+    private boolean queso = false;
+    private String salsa = "Sin salsa";
     public void setPan(String pan) { 
         this.pan = pan; 
     }
@@ -92,10 +90,10 @@ public class Hamburguesa {
 
     public void mostrar() {
         System.out.println("Informe pedido");
-            System.out.println("Pan: " + pan);
-            System.out.println("Carne: " + carne);
-            System.out.println("Queso: " + queso); 
-            System.out.println("Salsa: " + salsa);
+        System.out.println("Pan: " + pan);
+        System.out.println("Carne: " + carne);
+        System.out.println("Queso: " + (queso ? "Sí" : "No"));
+        System.out.println("Salsa: " + salsa);
     }
 }
 
@@ -168,7 +166,7 @@ Informe pedido
 Pan: Tradicional
 Carne: 1
 Queso: false
-Salsa: Mostaza
+Salsa: sin salsa
 ```
 
 ## Prototype
@@ -176,6 +174,14 @@ Salsa: Mostaza
 ### Descripción
 
 Permite copiar o clonar objetos existentes sin que el código dependa de sus clases concretas. Es ideal para crear nuevas instancias a partir de una plantilla ya configurada.
+
+### El problema
+
+Imagina que estás desarrollando un sistema de perfiles/pantallas de usuarios para una plataforma de streaming. Una vez configurada una pantalla con sus opciones de idioma y tipo de plan, crear un nuevo usuario o perfil similar requeriría volver a consultar o asignar individualmente cada uno de estos parámetros en el cliente. Si la clase tiene atributos privados o una jerarquía compleja (como perfiles infantiles con restricciones de contenido), instanciar manualmente cada duplicado genera código acoplado e ineficiente.
+
+### La solución
+
+Se define una interfaz prototipo (`PantallaPrototype`) con un método `clonar()`. Las clases concretas (`Pantalla` y `PantallaKids`) implementan dicho método utilizando un **constructor copia** internamente (`this`), lo que permite que el objeto se duplique a sí mismo de manera limpia manteniendo sus propiedades base intactas y dejando que el cliente altere únicamente los datos específicos (como el nombre del perfil).
 
 ### Estructura general
 
@@ -189,13 +195,6 @@ Permite copiar o clonar objetos existentes sin que el código dependa de sus cla
 
 ---
 
-### El problema
-
-Imagina que estás desarrollando un sistema de perfiles/pantallas de usuarios para una plataforma de streaming. Una vez configurada una pantalla con sus opciones de idioma y tipo de plan, crear un nuevo usuario o perfil similar requeriría volver a consultar o asignar individualmente cada uno de estos parámetros en el cliente. Si la clase tiene atributos privados o una jerarquía compleja (como perfiles infantiles con restricciones de contenido), instanciar manualmente cada duplicado genera código acoplado e ineficiente.
-
-### La solución
-
-Se define una interfaz prototipo (`PantallaPrototype`) con un método `clonar()`. Las clases concretas (`Pantalla` y `PantallaKids`) implementan dicho método utilizando un **constructor copia** internamente (`this`), lo que permite que el objeto se duplique a sí mismo de manera limpia manteniendo sus propiedades base intactas y dejando que el cliente altere únicamente los datos específicos (como el nombre del perfil).
 
 ### Código para probar
 
